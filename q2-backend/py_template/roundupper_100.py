@@ -39,19 +39,26 @@ space_database: List[SpaceEntity] = []
 def create_entity():
     entities = request.get_json()["entities"]
     for entity in entities:
-        space_database.append(entity)
+        metadata = None
+        if entity["type"] == "space_cowboy":
+            metadata = SpaceCowboy(entity["metadata"]["name"], entity["metadata"]["lassoLength"])
+        elif entity["type"] == "space_animal":
+            metadata = SpaceAnimal(entity["metadata"]["type"])
+        location = SpaceEntity.Location(entity["location"]["x"], entity["location"]["y"])
+        spaceEntity = SpaceEntity(metadata, location)
+        space_database.append(spaceEntity)
     return {}
 
 def pythagoreanDistance(entityA, entityB):
-    aX = entityA["location"]["x"]
-    aY = entityA["location"]["y"]
-    bX = entityB["location"]["x"]
-    bY = entityB["location"]["y"]
+    aX = entityA.location.x
+    aY = entityA.location.y
+    bX = entityB.location.x
+    bY = entityB.location.y
     return ((aX - bX) ** 2 + (aY - bY) ** 2) ** 0.5
 
 def cowboyFromName(name):
     for entity in space_database:
-        if entity["type"] == "space_cowboy" and entity["metadata"]["name"] == name:
+        if type(entity.metadata) is SpaceCowboy and entity.metadata.name == name:
             return entity
 
 # lasooable returns all the space animals a space cowboy can lasso given their name
@@ -61,13 +68,15 @@ def lassoable():
     cowboy = cowboyFromName(name)
     lassoableList = []
     for entity in space_database:
-        if entity["type"] == "space_animal" and pythagoreanDistance(entity, cowboy) <= cowboy["metadata"]["lassoLength"]:
+        if type(entity.metadata) is SpaceAnimal and pythagoreanDistance(entity, cowboy) <= cowboy.metadata.lassoLength:
             lassoableList.append({
-                "type": entity["metadata"]["type"],
-                "location": entity["location"]
+                "location": {
+                    "x": entity.location.x,
+                    "y": entity.location.y
+                },
+                "type": entity.metadata.type
             })
     return {"space_animals": lassoableList}
-
 
 # DO NOT TOUCH ME, thanks :D
 if __name__ == '__main__':
