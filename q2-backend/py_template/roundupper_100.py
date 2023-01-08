@@ -37,14 +37,36 @@ space_database: List[SpaceEntity] = []
 # the POST /entity endpoint adds an entity to your global space database
 @app.route('/entity', methods=['POST'])
 def create_entity():
-    # TODO: implement me
-    ...
+    entities = request.get_json()["entities"]
+    for entity in entities:
+        space_database.append(entity)
+    return {}
+
+def pythagoreanDistance(entityA, entityB):
+    aX = entityA["location"]["x"]
+    aY = entityA["location"]["y"]
+    bX = entityB["location"]["x"]
+    bY = entityB["location"]["y"]
+    return ((aX - bX) ** 2 + (aY - bY) ** 2) ** 0.5
+
+def cowboyFromName(name):
+    for entity in space_database:
+        if entity["type"] == "space_cowboy" and entity["metadata"]["name"] == name:
+            return entity
 
 # lasooable returns all the space animals a space cowboy can lasso given their name
 @app.route('/lassoable', methods=['GET'])
 def lassoable():
-    # TODO: implement me
-    ...
+    name = request.get_json()["cowboy_name"]
+    cowboy = cowboyFromName(name)
+    lassoableList = []
+    for entity in space_database:
+        if entity["type"] == "space_animal" and pythagoreanDistance(entity, cowboy) <= cowboy["metadata"]["lassoLength"]:
+            lassoableList.append({
+                "type": entity["metadata"]["type"],
+                "location": entity["location"]
+            })
+    return {"space_animals": lassoableList}
 
 
 # DO NOT TOUCH ME, thanks :D
