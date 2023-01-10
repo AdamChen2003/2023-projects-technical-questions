@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Union, NamedTuple, List
 from flask import Flask, request
+from error import NonExistentNameError, NonExistentAnimalTypeError
 
 # SpaceCowboy models a cowboy in our super amazing system
 @dataclass
@@ -43,7 +44,10 @@ def create_entity():
         if entity["type"] == "space_cowboy":
             metadata = SpaceCowboy(entity["metadata"]["name"], entity["metadata"]["lassoLength"])
         elif entity["type"] == "space_animal":
-            metadata = SpaceAnimal(entity["metadata"]["type"])
+            try:
+                metadata = SpaceAnimal((SpaceAnimal.SpaceAnimalType(entity["metadata"]["type"]).name))
+            except:
+                raise NonExistentAnimalTypeError(f"Animal type is not defined")
         location = SpaceEntity.Location(entity["location"]["x"], entity["location"]["y"])
         spaceEntity = SpaceEntity(metadata, location)
         space_database.append(spaceEntity)
@@ -66,6 +70,8 @@ def cowboyFromName(name):
 def lassoable():
     name = request.get_json()["cowboy_name"]
     cowboy = cowboyFromName(name)
+    if cowboy is None:
+        raise NonExistentNameError("CowBoy does not exist")
     lassoableList = []
     for entity in space_database:
         if type(entity.metadata) is SpaceAnimal and pythagoreanDistance(entity, cowboy) <= cowboy.metadata.lassoLength:
@@ -74,7 +80,7 @@ def lassoable():
                     "x": entity.location.x,
                     "y": entity.location.y
                 },
-                "type": entity.metadata.type
+                "type": str(SpaceAnimal.SpaceAnimalType[entity.metadata.type].value)
             })
     return {"space_animals": lassoableList}
 
